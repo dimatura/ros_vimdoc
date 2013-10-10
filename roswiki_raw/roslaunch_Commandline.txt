@@ -1,0 +1,146 @@
+The [[roslaunch]] package comes with `roslaunch` tool as well as several support tools to assist in the process of launching ROS [[Nodes]]. 
+
+<<TableOfContents(3)>>
+
+== roslaunch ==
+
+`roslaunch` is an important tool that manages the start and stop of ROS [[Nodes|nodes]]. It takes one or more `.launch` files as arguments. 
+
+
+=== Launch syntax ===
+
+Most `roslaunch` command require the name of a launch file. You can either specify the file path of the launch file, or you can specify a package name and launch file in that package, e.g. 
+ {{{
+$ roslaunch roslaunch example.launch
+}}}
+ or
+ {{{
+$ roscd roslaunch
+$ roslaunch example.launch
+}}}
+
+`roslaunch <package-name> <launch-filename> [args]`
+  Launch `<launch-filename>` located in `<package-name>`, e.g.: {{{
+$ roslaunch rospy_tutorials talker_listener.launch
+}}}
+
+  `roslaunch` will find a file with the matching name inside the specified package and run it. 
+
+`roslaunch <launch-file-path> [args]`
+  Launch the file specified by the file path, e.g.{{{
+$ roslaunch pr2_robot/pr2_bringup/pr2.launch
+}}}
+
+`-p port`
+   If you launched `roscore` on a different port using the `-p` option, you need to pass in the `-p` flag to roslaunch as well, e.g. {{{
+$ roslaunch -p 1234 package filename.launch
+}}} This will dynamically override the port setting in your `ROS_MASTER_URI`.
+
+`--wait`
+  Delay the launch until a `roscore` is detected.
+
+`--local`
+  Launch of the local nodes only. Nodes on remote machines will not be run. 
+
+`--screen`
+  Force all node output to screen. Useful for node debugging.
+
+`-v` 
+  Enable verbose printing. Useful for tracing roslaunch file parsing. 
+
+`--dump-params` 
+  Print parameters in launch file in YAML format.
+
+
+=== Passing in args ===
+
+If the file you are launching specifies [[roslaunch/XML/arg|args]] that require setting, you can do so using an identical syntax to ROS remapping arguments, e.g.:
+
+{{{
+roslaunch my_file.launch arg:=value
+}}}
+
+=== Non-launch options ===
+
+The following options provide information about a launch file without actually doing a launch. These options use the same launch-file resolution as the regular `roslaunch` command. You can either specify the file path of the launch file, or you can specify a package name and launch file in that package, e.g. for the `example.launch` file in the `roslaunch` package, you can use:
+ {{{
+roslaunch --nodes roslaunch $ROS_ROOT/tools/roslaunch/example.launch
+}}} or {{{
+roslaunch --nodes roslaunch example.launch
+}}}
+
+`--nodes <package-name> <launch-file>`<<BR>>
+`--nodes <launch-file>`
+  List nodes by 'name' that are in `<launch-file>`. This is useful for figuring out the node name to pass to `--args`.
+
+`--args <node-name> <package-name> <launch-file>`<<BR>>
+`--args <node-name> <launch-file>`
+  Display the command-line arguments that `roslaunch` uses when launching the node in `<launch-file>` named `<node-name>`. This is handy if you just want to launch that particular node for debugging, e.g. {{{
+$ roslaunch --args my_node file.launch | bash
+}}}
+
+  You can also use this option with substitution args (for bash, you have to be careful to use single-quotes instead of double-quotes): {{{
+$ roslaunch --args '$(anon my_node)' file.launch
+}}}
+
+`--find <node-name> <package-name> <launch-file>` <<BR>>
+`--find <node-name> <launch-file>` 
+  Print name of launch file that the node named `<node-name>` is defined in. Launch files often have many includes, which can make it difficult to find where an actual `<node>` definition resides. For example: {{{
+$ roslaunch --find /included/talker roslaunch example.launch
+}}}
+
+`--files <filename>` 
+  Print all files included in processing `<filename>`, including the file itself. This is useful for passing to other command line tools, e.g. {{{
+$ roslaunch --files foo.launch | xargs grep stuff
+}}}
+
+=== Internal-use only options ===
+
+`roslaunch` uses several command-line options that are for internal use
+only, including `-c`, `-u`, and `--core`.
+
+
+=== Environment Variables (advanced users) ===
+
+''NOTE: this section is intended for advanced users only''
+
+ `ROSLAUNCH_SSH_UNKNOWN` 
+  When launching on remote machines, SSH requires that the remote machine's key be stored in the local `known_hosts` file. You can set `roslaunch` to ignore this constraint and allow connections to machines for which you don't have keys established. This is a dangerous option as it introduces a security hole and should only be used if you understand the consequences.
+
+== roslaunch-deps ==
+
+`roslaunch-deps` reports which ROS [[Packages]] a `.launch` file depends on. It can also track down command build problems, such as missing dependencies in package [[Manifest|manifests]]. One command you may wish to run is to build all the packages necessary for a launch file:
+
+{{{
+rosmake `roslaunch-deps file.launch`
+}}}
+
+=== Usage ===
+
+To get warnings about dependencies missing in manifest files, run with the -w warn option:
+
+{{{
+$ roslaunch-deps -w file.launch
+}}}
+
+To get more verbose output to help track where a dependency is coming from, run with the -v verbose option:
+
+{{{
+$ roslaunch-deps -v file.launch
+}}}
+
+
+
+== roslaunch-logs ==
+
+Roslaunch stores log files for a particular run together in a subdirectory of the ROS log directory (`$ROS_ROOT/log` or `$ROS_LOG_DIR`). In general, logs files are stored in `ROS_LOG_DIR/run_id`, where `run_id` is a unique ID associated with a particular run of a roscore. 
+
+=== Usage ===
+
+`roslaunch-logs` is meant to be used together with the 'cd' command, e.g.
+
+{{{
+cd `roslaunch-logs`
+}}}
+
+You can type this command to quickly go to the directory with the log files for your nodes.
